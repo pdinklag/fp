@@ -39,3 +39,15 @@ add_subdirectory(path/to/fp)
 ```
 
 You can then link against the `fp` interface library, which will automatically add the include directory to your target.
+
+## Fingerprinting with Mersenne primes
+
+For a string $S \in \Sigma^\ell$ of length $\ell$, we compute the Rabin-Karp fingerprint $\phi(S)$ using the well-known formula $\phi(S) = \left(\sum_{i=1}^{\ell} S[i] \cdot \sigma^{\ell-1-i} \right) \bmod q$, where $\sigma$ is the *base* and $q$ prime. Fixing $q$ to a Mersenne prime allows us to harness huge performance benefits regarding the modulo operation.
+
+Let $q = 2^a-1$ be a Mersenne prime, then for any $x < 2^{2a}-1$, it holds that $x \bmod q = (x \gg a) + (x \land q) - bq$, where $b \in \{0,1\}$ is 1 iff $(x \gg a) + (x \land q) < q$. Thus, the modulo operation against $q$ is reduced to very simple arithmetics (modern compilers will optimize the multiplication $bq$ to a conditional move since $b$​ is a Boolean, thus avoiding a branch).
+
+This library features Karp-Rabin fingerprinting for 32-bit and 64-bit fingerprints using the Mersenne primes $2^{31}-1$ and $2^{61}-1$, respectively. If we store $x$ in a correspondingly wide integer (i.e., 32 or 64 bits, respectively), we guarantee the above condition that $x < 2^{2a}-1$.
+
+### The Power-of-Two Base Pitfall
+
+When using Mersenne primes for fingerprinting ASCII-encoded text, choosing $\sigma$ to be a power of two causes a clustering of fingerprint collisions. The root cause is found in the nature of how modular arithmetics behave with Mersenne primes versus how ASCII is defined regarding capital and small letters. It cannot be resolved other than choosing a different base. The library will emit a warning to the standard error stream in case the chosen base happens to be a power of two.

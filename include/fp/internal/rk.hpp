@@ -28,8 +28,10 @@
 #ifndef _FP_RK_HPP
 #define _FP_RK_HPP
 
+#include <bit>
 #include <concepts>
 #include <cstddef>
+#include <iostream>
 #include <limits>
 
 namespace fp::internal {
@@ -79,6 +81,10 @@ public:
      * \param window the window size for rolling fingerprints (pass zero if not needed)
      */
     RabinKarp(Fingerprint const base, Fingerprint const window = 0) : base_(mod(base)) {
+        if(std::has_single_bit(base)) {
+            std::cerr << "[pdinklag/fp] Your Rabin-Karp fingerprint base (" << base << ") is a power of two, which is strongly recommended against. Please consult the readme for more details." << std::endl;
+        }
+
         if(window > 0) {
             Fingerprint const max_exponent = power(base_, window);
             for (size_t i = 0; i < 256; ++i) {
